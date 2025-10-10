@@ -61,5 +61,3 @@ Each cast brings discovery — from rare fish behaviors to creative cooking comb
 
 - **Coins** — Buy rods, bait, and kitchen upgrades.  
 - **Reputation** — Unlock new recipes, vendors, and fishing zones.  
-
-Rod Tiers:
