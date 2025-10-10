@@ -452,9 +452,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FishController
   leftPos: {fileID: 530496918}
   middlePos: {fileID: 770508225}
+  rightPos: {fileID: 1248671051}
   fishPrefab: {fileID: 1844202964939830746, guid: ddc42904b72a9584aa256bb4b1cd781b, type: 3}
-  moveDuration: 1.2
-  easeCurve:
+  startButton: {fileID: 1776595676}
+  moveInDuration: 1.1
+  moveOutDuration: 1
+  ease:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
@@ -478,7 +481,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  triggerButton: {fileID: 1776595676}
+  requiredCuts: 5
+  tapCooldown: 0.1
 --- !u!4 &768937906
 Transform:
   m_ObjectHideFlags: 0
