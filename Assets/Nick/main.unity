@@ -453,7 +453,8 @@ MonoBehaviour:
   leftPos: {fileID: 530496918}
   middlePos: {fileID: 770508225}
   rightPos: {fileID: 1248671051}
-  fishPrefab: {fileID: 1844202964939830746, guid: ddc42904b72a9584aa256bb4b1cd781b, type: 3}
+  topPrefab: {fileID: 1844202964939830746, guid: ddc42904b72a9584aa256bb4b1cd781b, type: 3}
+  bottomPrefab: {fileID: 1844202964939830746, guid: ddc42904b72a9584aa256bb4b1cd781b, type: 3}
   startButton: {fileID: 1776595676}
   moveInDuration: 1.1
   moveOutDuration: 1
@@ -481,8 +482,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  requiredCuts: 5
-  tapCooldown: 0.1
+  clearExtraRight: 1.5
 --- !u!4 &768937906
 Transform:
   m_ObjectHideFlags: 0

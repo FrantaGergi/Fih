@@ -3,30 +3,31 @@ using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using System.Collections;
 
-public class FishController : MonoBehaviour
+public class FishSplitController : MonoBehaviour
 {
     [Header("Markers")]
     public Transform leftPos;
     public Transform middlePos;
     public Transform rightPos;
 
-    [Header("Prefab & UI")]
-    public GameObject fishPrefab;
+    [Header("Prefabs")]
+    public GameObject topPrefab;
+    public GameObject bottomPrefab;
+
+    [Header("UI")]
     public Button startButton;
 
-    [Header("Movement")]
-    public float moveInDuration = 1.1f;
-    public float moveOutDuration = 1.0f;
+    [Header("Timing")]
+    public float moveInDuration = 1.0f;
+    public float moveOutDuration = 0.9f;
     public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    public float clearExtraRight = 1.5f;
 
-    [Header("Cutting")]
-    public int requiredCuts = 5;
-    public float tapCooldown = 0.10f;
+    GameObject top;
+    GameObject bottom;
 
-    GameObject fish;
-    bool cutting;
-    int cuts;
-    float nextTap;
+    enum Phase { Idle, WaitFirstTap, TopSlidingOut, WaitClearTap, Clearing }
+    Phase phase = Phase.Idle;
 
     void Start()
     {
@@ -36,52 +37,66 @@ public class FishController : MonoBehaviour
     public void StartFlow()
     {
         StopAllCoroutines();
-        cutting = false;
-        cuts = 0;
+        DestroyIfExists();
 
-        if (fish) Destroy(fish);
-        fish = Instantiate(fishPrefab, leftPos.position, Quaternion.identity);
+        top = Instantiate(topPrefab, leftPos.position, Quaternion.identity);
+        phase = Phase.Idle;
 
-        StartCoroutine(MoveCo(fish, middlePos.position, moveInDuration, () =>
+        StartCoroutine(MoveCo(top, middlePos.position, moveInDuration, () =>
         {
-            cutting = true;
+            phase = Phase.WaitFirstTap;
         }));
     }
 
     void Update()
     {
-        if (!cutting) return;
+        if (!TapPressedThisFrame()) return;
 
-        if (TapPressedThisFrame())
+        switch (phase)
         {
-            nextTap = Time.time + tapCooldown;
-            cuts++;
+            case Phase.WaitFirstTap:
+                bottom = Instantiate(bottomPrefab, middlePos.position, Quaternion.identity);
 
-            if (cuts >= requiredCuts)
-            {
-                cutting = false;
-                StartCoroutine(MoveCo(fish, rightPos.position, moveOutDuration, () =>
+                phase = Phase.TopSlidingOut;
+                StartCoroutine(MoveCo(top, rightPos.position, moveOutDuration, () =>
                 {
-                    Destroy(fish);
+                    phase = Phase.WaitClearTap;
                 }));
-            }
+                break;
+
+            case Phase.WaitClearTap:
+                phase = Phase.Clearing;
+
+                Vector3 finalRight = rightPos.position + Vector3.right * clearExtraRight;
+
+                int done = 0;
+                System.Action onOneDone = () =>
+                {
+                    done++;
+                    if (done >= (top ? 1 : 0) + (bottom ? 1 : 0))
+                        DestroyIfExists();
+                };
+
+                if (top)
+                    StartCoroutine(MoveCo(top, finalRight, moveOutDuration, onOneDone));
+                if (bottom)
+                    StartCoroutine(MoveCo(bottom, finalRight, moveOutDuration, onOneDone));
+                break;
         }
     }
 
     bool TapPressedThisFrame()
     {
-        if (Time.time < nextTap) return false;
-
         if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) return true;
-
         var ts = Touchscreen.current;
         if (ts != null && ts.primaryTouch.press.wasPressedThisFrame) return true;
-
         return false;
     }
 
     IEnumerator MoveCo(GameObject obj, Vector3 to, float duration, System.Action onDone)
     {
+        if (!obj) { onDone?.Invoke(); yield break; }
+
         Vector3 from = obj.transform.position;
         float t = 0f;
         duration = Mathf.Max(0.0001f, duration);
@@ -93,6 +108,15 @@ public class FishController : MonoBehaviour
             obj.transform.position = Vector3.LerpUnclamped(from, to, e);
             yield return null;
         }
+        obj.transform.position = to;
         onDone?.Invoke();
+    }
+
+    void DestroyIfExists()
+    {
+        if (top) Destroy(top);
+        if (bottom) Destroy(bottom);
+        top = null; bottom = null;
+        phase = Phase.Idle;
     }
 }
