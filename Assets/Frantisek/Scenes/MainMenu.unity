@@ -154,6 +154,10 @@ MonoBehaviour:
   - {fileID: 1930524784033872999}
   - {fileID: 2206291813555888335}
   - {fileID: 755287589105952672}
+  lakeSceneName: Lake
+  seaSceneName: Sea
+  barSceneName: main
+  riverSceneName: River
 --- !u!4 &77397309
 Transform:
   m_ObjectHideFlags: 0

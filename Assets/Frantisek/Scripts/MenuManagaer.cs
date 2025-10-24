@@ -3,12 +3,30 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+
 
 public class MenuManager : MonoBehaviour
 {
     [SerializeField] private Transform Menubackground;
     [SerializeField] private List<GameObject> interactives = new List<GameObject>();
+
+    [SerializeField] private string lakeSceneName; 
+    [SerializeField] private string seaSceneName;
+    [SerializeField] private string barSceneName;
+    [SerializeField] private string riverSceneName;
+
+
+    public void LoadScene(string sceneToLoad)
+    {
+        if (sceneToLoad != null)
+        {
+           
+            // naèíst scénu
+            SceneManager.LoadScene(sceneToLoad);
+        }
+    }
 
     public enum MenuState
     {
@@ -120,20 +138,24 @@ public class MenuManager : MonoBehaviour
         {
             case MenuState.Lake:
                 Debug.Log("Spouštím lake!");
+                LoadScene(lakeSceneName);
                 // tady zavoláš tøeba StartGame();
                 break;
 
             case MenuState.River:
                 Debug.Log("Otevírám reku!");
+                LoadScene(riverSceneName);
                 // tady tøeba OpenShop();
                 break;
             
             case MenuState.Sea:
                 Debug.Log("Otevírám more!");
+                LoadScene(seaSceneName);
                 // tady tøeba OpenShop();
                 break;
             case MenuState.Bar:
                 Debug.Log("Otevírám obchod!");
+                LoadScene(barSceneName);
                 // tady tøeba OpenShop();
                 break;
         }
