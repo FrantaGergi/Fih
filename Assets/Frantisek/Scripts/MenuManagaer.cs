@@ -1,90 +1,175 @@
 using System.Collections;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-public class MenuManagaer : MonoBehaviour
+public class MenuManager : MonoBehaviour
 {
-    [SerializeField] private Image startButton;
-    [SerializeField] private Image settingButton;
-    [SerializeField] private Image quitButton;
-    [SerializeField] private Image containerOfButtons;
+    [SerializeField] private Transform Menubackground;
+    [SerializeField] private List<GameObject> interactives = new List<GameObject>();
 
+    public enum MenuState
+    {
+        Lake,
+        Sea,
+        Bar,
+        River
+    }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         ShowMenu(true);
     }
-    void ShowMenu(bool enabled)
+
+    public void ShowMenu(bool show)
     {
-        if(!enabled)
+        StopAllCoroutines(); // zastaví pøedchozí efekty, aby se nepletly
+
+        if (show)
         {
-            StartCoroutine(FadeIn(containerOfButtons, 3f));
-            StartCoroutine(FadeIn(startButton));
-            StartCoroutine(FadeIn(settingButton, 1.5f));
-            StartCoroutine(FadeIn(quitButton, 2f));
-            return;
+            foreach (GameObject interact in interactives)
+            {
+                interact.SetActive(false);
+            }
+
+            Menubackground.gameObject.SetActive(true);
+            StartCoroutine(ScaleIn(Menubackground, 3f));   
+            Debug.Log("Show Menu");
         }
-        startButton.enabled = true;
-        settingButton.enabled = true;
-        quitButton.enabled = true;
-        containerOfButtons.enabled = true;
-
-        StartCoroutine(FadeOut(containerOfButtons, 2f));
-        StartCoroutine(FadeOut(startButton));
-        StartCoroutine(FadeOut(settingButton, 1.5f));
-        StartCoroutine(FadeOut(quitButton, 2f));
-    }
-
-
-    // Update is called once per frame
-    void Update()
-    {
-        
+        else
+        {
+            StartCoroutine(ScaleOut(Menubackground, 3f));  
+            Invoke(nameof(TurnOnInteract), 3.5f);
+        }
     }
 
     public void StartGame()
     {
-        
+        ShowMenu(false);
+        Invoke(nameof(HideBackground), 3f);
+        Invoke(nameof(TurnOnInteract), 4f);
     }
+
+    private void HideBackground()
+    {
+        Menubackground.gameObject.SetActive(false);
+    }
+
+    public void TurnOnInteract()
+    {
+        foreach (GameObject interact in interactives)
+        {
+            interact.SetActive(true);
+        }
+    }
+
     public void QuitGame()
     {
         ShowMenu(false);
         Application.Quit();
     }
+
     public void OpenSetting()
     {
         Debug.Log("Open Setting Menu");
     }
 
-
-    public IEnumerator FadeIn(Image fadeImage, float fadeDuration = 1f)
+    public IEnumerator ScaleIn(Transform target, float duration = 1f)
     {
         float elapsed = 0f;
-        Color c = fadeImage.color;
-        while (elapsed < fadeDuration)
+        Vector3 startScale = Vector3.zero; // neviditelné
+        Vector3 endScale = Vector3.one;    // plná velikost
+
+        target.localScale = startScale;
+
+        while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            c.a = 1f - (elapsed / fadeDuration);
-            fadeImage.color = c;
+            float t = Mathf.Clamp01(elapsed / duration);
+            target.localScale = Vector3.LerpUnclamped(startScale, endScale, Mathf.SmoothStep(0, 1, t));
             yield return null;
         }
-        c.a = 0f;
-        fadeImage.color = c;
+
+        target.localScale = endScale;
     }
 
-    public IEnumerator FadeOut(Image fadeImage, float fadeDuration = 1f)
+    public IEnumerator ScaleOut(Transform target, float duration = 1f)
     {
         float elapsed = 0f;
-        Color c = fadeImage.color;
-        while (elapsed < fadeDuration)
+        Vector3 startScale = target.localScale;
+        Vector3 endScale = Vector3.zero;
+
+        while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            c.a = elapsed / fadeDuration;
-            fadeImage.color = c;
+            float t = Mathf.Clamp01(elapsed / duration);
+            target.localScale = Vector3.LerpUnclamped(startScale, endScale, Mathf.SmoothStep(0, 1, t));
             yield return null;
         }
-        c.a = 1f;
-        fadeImage.color = c;
+
+        target.localScale = endScale;
+    }
+
+    public void OnInteractiveClicked(MenuState name)
+    {
+        Debug.Log("Klikl jsi na: " + name);
+
+        switch (name)
+        {
+            case MenuState.Lake:
+                Debug.Log("Spouštím lake!");
+                // tady zavoláš tøeba StartGame();
+                break;
+
+            case MenuState.River:
+                Debug.Log("Otevírám reku!");
+                // tady tøeba OpenShop();
+                break;
+            
+            case MenuState.Sea:
+                Debug.Log("Otevírám more!");
+                // tady tøeba OpenShop();
+                break;
+            case MenuState.Bar:
+                Debug.Log("Otevírám obchod!");
+                // tady tøeba OpenShop();
+                break;
+        }
+    }
+
+    public void OnClick(InputAction.CallbackContext context)
+    {
+
+        if (!context.performed)
+        {
+            return;
+        }
+
+        Debug.Log("Kliknuto");
+
+        Vector2 screenPos = Vector2.zero;
+
+        // kontrola typu ovládání
+        if (context.control.device is Mouse)
+            screenPos = Mouse.current.position.ReadValue();
+        else if (context.control.device is Touchscreen)
+            screenPos = Touchscreen.current.primaryTouch.position.ReadValue();
+
+        // nebo, pokud chceš univerzálnì
+        // screenPos = Pointer.current.position.ReadValue();
+
+        Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 0f));
+
+
+        Ray ray = Camera.main.ScreenPointToRay(screenPos);
+            if (Physics.Raycast(ray, out RaycastHit hit))
+            {
+                Debug.Log("Hit: " + hit.collider.gameObject.name);  
+            IInteractive interactionManager = hit.collider.gameObject.GetComponent<IInteractive>();
+                interactionManager?.OnInteract(this);
+            }
+        
     }
 }

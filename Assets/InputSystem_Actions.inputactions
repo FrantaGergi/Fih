@@ -39,7 +39,7 @@
                     "id": "852140f2-7766-474d-8707-702459ba45f3",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": "Hold",
+                    "interactions": "",
                     "initialStateCheck": false
                 },
                 {
@@ -432,22 +432,22 @@
                 },
                 {
                     "name": "",
-                    "id": "1c04ea5f-b012-41d1-a6f7-02e963b52893",
-                    "path": "<Keyboard>/e",
-                    "interactions": "",
+                    "id": "ebce58bc-639c-4c67-a22f-c5d3c14cf931",
+                    "path": "<Touchscreen>/touch*/press",
+                    "interactions": "Press",
                     "processors": "",
-                    "groups": "Keyboard&Mouse",
+                    "groups": "Touch",
                     "action": "Interact",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "",
-                    "id": "b3f66d0b-7751-423f-908b-a11c5bd95930",
-                    "path": "<Gamepad>/buttonNorth",
-                    "interactions": "",
+                    "id": "5eb2a01c-a318-496d-a593-be79ea23f2dd",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "Press",
                     "processors": "",
-                    "groups": "Gamepad",
+                    "groups": ";Keyboard&Mouse",
                     "action": "Interact",
                     "isComposite": false,
                     "isPartOfComposite": false
