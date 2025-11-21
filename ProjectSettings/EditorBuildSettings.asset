@@ -5,9 +5,24 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/Frantisek/Scenes/MainMenu.unity
+    guid: 3947d26915bbd744b928271057857ca4
+  - enabled: 1
+    path: Assets/Nick/main.unity
+    guid: 97f20f29a28f0614b8577bef766b4488
+  - enabled: 1
+    path: Assets/Frantisek/Scenes/Sea.unity
+    guid: 304c55d40fe845d41abea1da2a55a394
+  - enabled: 1
+    path: Assets/Frantisek/Scenes/River.unity
+    guid: bb1eff921c5c5c54a9181a8bcca04823
+  - enabled: 1
+    path: Assets/Frantisek/Scenes/Lake.unity
+    guid: 864f106c6dfe2e94b924aacc20bb2d31
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0
