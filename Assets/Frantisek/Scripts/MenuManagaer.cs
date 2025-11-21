@@ -9,20 +9,60 @@ using UnityEngine.UI;
 
 public class MenuManager : MonoBehaviour
 {
-    [SerializeField] private Transform Menubackground;
-    [SerializeField] private List<GameObject> interactives = new List<GameObject>();
+    // Singleton instance
+    public static MenuManager Instance { get; private set; }
 
-    [SerializeField] private string lakeSceneName; 
+
+
+    [SerializeField] private string lakeSceneName;
     [SerializeField] private string seaSceneName;
     [SerializeField] private string barSceneName;
     [SerializeField] private string riverSceneName;
+    [SerializeField] private string menuSceneName;
+
+
+    private List<GameObject> interactives = new List<GameObject>();
+    private Transform menubackground;
+
+    private MainMenuController mainMenuController;
+    private Button showMenuBttn;
+    private Button registeredShowMenuButton; // track registered button to remove listener
+    // Ensures the menu is shown only once on initial game start
+    private bool hasShownMenuOnStartup = false;
+
+    private void Awake()
+    {
+        Debug.Log("MenuManager Awake");
+        // Enforce singleton - keep only one instance and persist it across scenes
+        if (Instance != null && Instance != this)
+        {
+            Debug.Log("MenuManager duplicate destroyed");
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
+
+    }
+
+    private void OnDestroy()
+    {
+        // cleanup listener if manager destroyed
+        if (registeredShowMenuButton != null)
+        {
+            registeredShowMenuButton.onClick.RemoveListener(ShowMenuManual);
+            registeredShowMenuButton = null;
+        }
+    }
 
 
     public void LoadScene(string sceneToLoad)
     {
         if (sceneToLoad != null)
         {
-           
+
             // naèíst scénu
             SceneManager.LoadScene(sceneToLoad);
         }
@@ -33,10 +73,105 @@ public class MenuManager : MonoBehaviour
         Lake,
         Sea,
         Bar,
-        River
+        River,
+        Menu
     }
 
     void Start()
+    {
+        Debug.Log("MenuManager Start");
+
+        mainMenuController = FindFirstObjectByType<MainMenuController>();
+        if (mainMenuController != null)
+        {
+            interactives = mainMenuController.Interactives;
+            menubackground = mainMenuController.MenuBackground;
+            showMenuBttn = mainMenuController.ShowMenuBttn;
+            if (menubackground != null)
+                menubackground.gameObject.SetActive(false);
+
+            RegisterShowMenuButton(showMenuBttn);
+        }
+
+
+        if (!hasShownMenuOnStartup)
+        {
+            ShowMenu(true);
+            hasShownMenuOnStartup = true;
+        }
+
+    }
+
+    private void RegisterShowMenuButton(Button btn)
+    {
+        if (registeredShowMenuButton == btn) return;
+
+        if (registeredShowMenuButton != null)
+        {
+            registeredShowMenuButton.onClick.RemoveListener(ShowMenuManual);
+        }
+
+        registeredShowMenuButton = btn;
+
+        if (registeredShowMenuButton != null)
+        {
+            registeredShowMenuButton.onClick.AddListener(ShowMenuManual);
+        }
+    }
+
+    // Fallback input handling if Input System callback isn't wired
+    private void Update()
+    {
+        // touch input (new Input System) - mobile
+        if (Touchscreen.current != null)
+        {
+            // primaryTouch is null on some devices until touched
+            var primary = Touchscreen.current.primaryTouch;
+            if (primary != null && primary.press.wasPressedThisFrame)
+            {
+                Vector2 screenPos = primary.position.ReadValue();
+                HandlePointerClick(screenPos);
+                return;
+            }
+
+            // also check all touches (multi-touch)
+            foreach (var t in Touchscreen.current.touches)
+            {
+                if (t.press != null && t.press.wasPressedThisFrame)
+                {
+                    Vector2 screenPos = t.position.ReadValue();
+                    HandlePointerClick(screenPos);
+                    return;
+                }
+            }
+        }
+
+        // use new Input System if available (mouse)
+        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            Vector2 screenPos = Mouse.current.position.ReadValue();
+            HandlePointerClick(screenPos);
+            return;
+        }
+
+        // also support legacy Input as an extra fallback
+        // this call can throw InvalidOperationException if project is set to use Input System only
+        try
+        {
+            if (UnityEngine.Input.GetMouseButtonDown(0))
+            {
+                Vector2 screenPos = UnityEngine.Input.mousePosition;
+                HandlePointerClick(screenPos);
+            }
+        }
+        catch (System.InvalidOperationException)
+        {
+            // Input System is active only; ignore legacy Input calls
+        }
+    }
+
+    // Public method you can wire to a button later to show the menu manually
+    public void ShowMenuManual()
     {
         ShowMenu(true);
     }
@@ -49,16 +184,23 @@ public class MenuManager : MonoBehaviour
         {
             foreach (GameObject interact in interactives)
             {
+                if (interact == null) continue;
                 interact.SetActive(false);
             }
 
-            Menubackground.gameObject.SetActive(true);
-            StartCoroutine(ScaleIn(Menubackground, 3f));   
+            if (menubackground != null)
+            {
+                menubackground.gameObject.SetActive(true);
+                StartCoroutine(ScaleIn(menubackground, 3f));
+            }
             Debug.Log("Show Menu");
         }
         else
         {
-            StartCoroutine(ScaleOut(Menubackground, 3f));  
+            if (menubackground != null)
+            {
+                StartCoroutine(ScaleOut(menubackground, 3f));
+            }
             Invoke(nameof(TurnOnInteract), 3.5f);
         }
     }
@@ -72,13 +214,32 @@ public class MenuManager : MonoBehaviour
 
     private void HideBackground()
     {
-        Menubackground.gameObject.SetActive(false);
+        if (menubackground != null)
+            menubackground.gameObject.SetActive(false);
     }
 
     public void TurnOnInteract()
     {
+        if (interactives == null) return;
+
+        // Remove destroyed/null entries that can remain after scene changes
+        interactives.RemoveAll(item => item == null);
+
+        // If list is empty (e.g. new scene), try to find MainMenuController in the current scene and refresh
+        if (interactives.Count == 0)
+        {
+            mainMenuController = FindFirstObjectByType<MainMenuController>();
+            if (mainMenuController != null && mainMenuController.Interactives != null)
+            {
+                interactives = new List<GameObject>(mainMenuController.Interactives);
+                showMenuBttn = mainMenuController.ShowMenuBttn;
+                RegisterShowMenuButton(showMenuBttn);
+            }
+        }
+
         foreach (GameObject interact in interactives)
         {
+            if (interact == null) continue;
             interact.SetActive(true);
         }
     }
@@ -147,7 +308,7 @@ public class MenuManager : MonoBehaviour
                 LoadScene(riverSceneName);
                 // tady tøeba OpenShop();
                 break;
-            
+
             case MenuState.Sea:
                 Debug.Log("Otevírám more!");
                 LoadScene(seaSceneName);
@@ -158,40 +319,120 @@ public class MenuManager : MonoBehaviour
                 LoadScene(barSceneName);
                 // tady tøeba OpenShop();
                 break;
+            case MenuState.Menu:
+                Debug.Log("Jsi už v menu!");
+                LoadScene(menuSceneName);
+                StartCoroutine(FindMainMenuNextFrame());
+                break;
         }
     }
 
-    public void OnClick(InputAction.CallbackContext context)
-    {
 
-        if (!context.performed)
+    private IEnumerator FindMainMenuNextFrame()
+    {
+        yield return null; // poèkej jeden frame, až se objekty vytvoøí
+        mainMenuController = FindFirstObjectByType<MainMenuController>();
+        if (mainMenuController != null)
         {
+            interactives = new List<GameObject>(mainMenuController.Interactives);
+            menubackground = mainMenuController.MenuBackground;
+            showMenuBttn = mainMenuController.ShowMenuBttn;
+            RegisterShowMenuButton(showMenuBttn);
+            if (menubackground != null)
+                menubackground.gameObject.SetActive(false);
+
+            // Ensure interactives are enabled so they can be clicked after returning to menu
+            interactives.RemoveAll(item => item == null);
+            foreach (var go in interactives)
+                if (go != null) go.SetActive(true);
+
+            Debug.Log("MainMenuController found next frame and interactives refreshed");
+        }
+        else
+        {
+            Debug.LogWarning("MainMenuController not found in FindMainMenuNextFrame");
+        }
+    }
+
+    private void OnEnable() => SceneManager.sceneLoaded += OnSceneLoaded;
+    private void OnDisable() => SceneManager.sceneLoaded -= OnSceneLoaded;
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name != menuSceneName) return;
+
+        mainMenuController = FindFirstObjectByType<MainMenuController>();
+        if (mainMenuController != null)
+        {
+            interactives = new List<GameObject>(mainMenuController.Interactives);
+            menubackground = mainMenuController.MenuBackground;
+            if (menubackground != null)
+                menubackground.gameObject.SetActive(false);
+
+            // ensure interactives active
+            interactives.RemoveAll(item => item == null);
+            foreach (var go in interactives)
+                if (go != null) go.SetActive(true);
+
+            Debug.Log("MainMenuController nalezen po naètení scény a interactives aktivovány");
+        }
+        else
+        {
+            Debug.LogWarning("MainMenuController not found in OnSceneLoaded");
+        }
+    }
+
+    // Centralized pointer click handling
+    private void HandlePointerClick(Vector2 screenPos)
+    {
+        Debug.Log($"HandlePointerClick at {screenPos}");
+
+        if (Camera.main == null)
+        {
+            Debug.LogWarning("Camera.main is null - cannot raycast");
             return;
         }
 
-        Debug.Log("Kliknuto");
-
-        Vector2 screenPos = Vector2.zero;
-
-        // kontrola typu ovládání
-        if (context.control.device is Mouse)
-            screenPos = Mouse.current.position.ReadValue();
-        else if (context.control.device is Touchscreen)
-            screenPos = Touchscreen.current.primaryTouch.position.ReadValue();
-
-        // nebo, pokud chceš univerzálnì
-        // screenPos = Pointer.current.position.ReadValue();
-
-        Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 0f));
-
-
         Ray ray = Camera.main.ScreenPointToRay(screenPos);
-            if (Physics.Raycast(ray, out RaycastHit hit))
+
+        // Try RaycastAll and check parent components as well, log all hits for debugging
+        var hits = Physics.RaycastAll(ray, Mathf.Infinity, ~0, QueryTriggerInteraction.Collide);
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+        if (hits.Length == 0)
+        {
+            Debug.Log("No physics hits from RaycastAll");
+        }
+        else
+        {
+            Debug.Log($"RaycastAll hit count: {hits.Length}");
+        }
+
+        foreach (var h in hits)
+        {
+            Debug.Log("Hit: " + h.collider.gameObject.name + " (collider)");
+            // try get interactive on the exact object
+            var interactive = h.collider.gameObject.GetComponent<IInteractive>();
+            if (interactive == null)
             {
-                Debug.Log("Hit: " + hit.collider.gameObject.name);  
-            IInteractive interactionManager = hit.collider.gameObject.GetComponent<IInteractive>();
-                interactionManager?.OnInteract(this);
+                // fallback to parent
+                interactive = h.collider.gameObject.GetComponentInParent<IInteractive>();
+                if (interactive != null)
+                    Debug.Log("Found IInteractive in parent: " + interactive);
             }
-        
+            if (interactive == null)
+            {
+                // fallback to children
+                interactive = h.collider.gameObject.GetComponentInChildren<IInteractive>();
+                if (interactive != null)
+                    Debug.Log("Found IInteractive in children: " + interactive);
+            }
+
+            if (interactive != null)
+            {
+                Debug.Log("Invoking OnInteract on: " + h.collider.gameObject.name);
+                interactive.OnInteract(this);
+                return; // handle first interactive
+            }
+        }
     }
 }
