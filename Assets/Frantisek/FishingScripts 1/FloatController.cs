@@ -7,6 +7,7 @@ public class FloatController : MonoBehaviour
     [SerializeField] private RectTransform startT;     // start transform (obsahuje scale a Y)
     [SerializeField] private RectTransform endT;       // end transform (obsahuje scale a Y)
     [SerializeField] private ReelingRotateUI reelingSource; // zdroj stavu/režimu navíjení
+    [SerializeField] private CatchPopup catchPopup; // volitelný popup pro zobrazení chycení
 
     [Header("Progress / speed")]
     [SerializeField, Tooltip("Max úhlová rychlost (deg/s) která odpovídá plnému posunu (progress = 1)")]
@@ -161,6 +162,9 @@ public class FloatController : MonoBehaviour
         // TODO: zde doplnit logiku co se má stát pøi úspìšném "catch" (pøidat rybu do inventáøe apod.)
         // Pokud žádná další logika, bude následovat reset stavu.
         OnReset();
+        catchPopup?.ShowCatch("Chytil nìjakou rybu!");
+
+
     }
 
     private void OnReset()
