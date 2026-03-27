@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3288e4c103fac7498cc3b75a254818f, type: 3}
+  m_Name: bombarino
+  m_EditorClassIdentifier: Assembly-CSharp::fish
+  fishname: bombarino
+  top: {fileID: 8013014459119236545, guid: b7390154f2e6b3b4199c07c437232d89, type: 3}
+  bottom: {fileID: 9015514042907174386, guid: e4e34e76d60db1c4b873923dc644c7f2, type: 3}

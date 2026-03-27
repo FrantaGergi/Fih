@@ -150,7 +150,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MenuManagaer
   lakeSceneName: Lake
   seaSceneName: Sea
-  barSceneName: main
+  barSceneName: CuttingBoard
   riverSceneName: River
   menuSceneName: MainMenu
 --- !u!4 &77397309

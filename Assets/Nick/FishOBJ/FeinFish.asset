@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3288e4c103fac7498cc3b75a254818f, type: 3}
+  m_Name: FeinFish
+  m_EditorClassIdentifier: Assembly-CSharp::fish
+  fishname: FeinFish
+  top: {fileID: 5590051554737085252, guid: 9412ec0acaaf90c43a124dd5c029153c, type: 3}
+  bottom: {fileID: 5015415334585615078, guid: d6cbfbddf5e9f0243914cef9439c60a8, type: 3}

@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3288e4c103fac7498cc3b75a254818f, type: 3}
+  m_Name: tamato
+  m_EditorClassIdentifier: Assembly-CSharp::fish
+  fishname: tamato
+  top: {fileID: 4091359141311822781, guid: d5df95bd3aad6a34ebec37f139a558c4, type: 3}
+  bottom: {fileID: 3876951857274955328, guid: 4fa57d49447670849bd752ed28405365, type: 3}
