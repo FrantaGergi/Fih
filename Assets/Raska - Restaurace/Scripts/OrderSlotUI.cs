@@ -1,125 +1,135 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
 public class OrderSlotUI : MonoBehaviour
 {
-    [Header("Root panels")]
-    public GameObject previewPanel;   // fish name for a few seconds (no timer)
-    public GameObject badgePanel;     // compact badge with order number
-    public GameObject detailPanel;    // expanded card (fish + timer + Close)
+    [Header("Panels")]
+    public GameObject previewPanel;
+    public GameObject badgePanel;
+    public GameObject detailPanel;
 
-    [Header("Preview refs")]
+    [Header("Preview")]
     public TextMeshProUGUI previewText;
 
-    [Header("Badge refs")]
+    [Header("Badge")]
     public Button badgeButton;
     public TextMeshProUGUI badgeNumberText;
+    public Image badgeBackground;
+    public Color badgeNormalColor = new Color(0.12f, 0.33f, 0.38f, 1f);
+    public Color badgeUrgentColor = new Color(0.72f, 0.18f, 0.18f, 1f);
 
-    [Header("Detail refs")]
+    [Header("Detail")]
     public TextMeshProUGUI detailFishText;
     public TextMeshProUGUI detailTimerText;
     public Button closeDetailButton;
 
+    [Header("Timer Bar")]
+    public Image timerBarFill;
+    public Color timerBarFullColor = new Color(0.25f, 0.78f, 0.55f, 1f);
+    public Color timerBarUrgentColor = new Color(0.85f, 0.28f, 0.20f, 1f);
+
     [Header("Settings")]
-    public float previewSeconds = 2.0f;
+    public float previewSeconds = 2f;
+    public float urgencyThreshold = 15f;
 
-    // State
-    private Order _order;
-    private bool _timerStarted;
-    private float _timeLeft;
-    private Coroutine _timerCo;
-
-    // External callback
     public System.Action<Order> onTimerExpired;
+    public System.Action<OrderSlotUI> onFinished;
+
+    private Order _order;
+    private float _timeLeft, _timeTotal;
+    private bool _timerStarted;
+    private Coroutine _timerCo, _previewCo;
 
     void Awake()
     {
-        if (badgeButton) badgeButton.onClick.AddListener(OpenDetail);
-        if (closeDetailButton) closeDetailButton.onClick.AddListener(CloseDetail);
-        SetAllOff();
+        badgeButton?.onClick.AddListener(OpenDetail);
+        closeDetailButton?.onClick.AddListener(CloseDetail);
+        HideAll();
     }
 
-    void SetAllOff()
+    public void Bind(Order order)
+    {
+        _order = order;
+        _timeLeft = _timeTotal = order.timeLimit;
+        _timerStarted = false;
+
+        StopAll();
+        if (previewText) previewText.text = $"New order!\n{order.fishSO.fishname}";
+
+        HideAll();
+        if (previewPanel) previewPanel.SetActive(true);
+        _previewCo = StartCoroutine(PreviewThenBadge());
+    }
+
+    public void CompleteOrder() { StopAll(); HideAll(); onFinished?.Invoke(this); }
+    public void HideAll()
     {
         if (previewPanel) previewPanel.SetActive(false);
         if (badgePanel) badgePanel.SetActive(false);
         if (detailPanel) detailPanel.SetActive(false);
     }
 
-    public void Bind(Order order)
-    {
-        _order = order;
-        _timerStarted = false;
-        _timeLeft = order.timeLimit;
-        if (_timerCo != null) { StopCoroutine(_timerCo); _timerCo = null; }
-
-        // 1) PREVIEW
-        if (previewText) previewText.text = $"Order: {order.fishType}";
-        previewPanel.SetActive(true);
-        badgePanel.SetActive(false);
-        detailPanel.SetActive(false);
-
-        StartCoroutine(PreviewThenBadge());
-    }
-
     IEnumerator PreviewThenBadge()
     {
         yield return new WaitForSeconds(previewSeconds);
-
-        // 2) BADGE
         if (badgeNumberText) badgeNumberText.text = _order.orderId.ToString();
-        previewPanel.SetActive(false);
-        badgePanel.SetActive(true);
-        detailPanel.SetActive(false);
+        if (badgeBackground) badgeBackground.color = badgeNormalColor;
+        HideAll();
+        if (badgePanel) badgePanel.SetActive(true);
+        OpenDetail();
     }
 
     void OpenDetail()
     {
-        // 3) DETAIL (start timer on first open)
-        if (detailFishText) detailFishText.text = $"{_order.fishType} (#{_order.orderId})";
+        if (detailFishText) detailFishText.text = $"{_order.fishSO.fishname}  #{_order.orderId}";
         UpdateTimerLabel(_timeLeft);
-        badgePanel.SetActive(false);
-        detailPanel.SetActive(true);
-
-        if (!_timerStarted)
-        {
-            _timerStarted = true;
-            _timerCo = StartCoroutine(RunTimer());
-        }
+        UpdateTimerBar(_timeLeft);
+        if (badgePanel) badgePanel.SetActive(false);
+        if (detailPanel) detailPanel.SetActive(true);
+        if (!_timerStarted) { _timerStarted = true; _timerCo = StartCoroutine(RunTimer()); }
     }
 
     void CloseDetail()
     {
-        // Back to badge; timer keeps running
-        detailPanel.SetActive(false);
-        badgePanel.SetActive(true);
+        if (detailPanel) detailPanel.SetActive(false);
+        if (badgePanel) badgePanel.SetActive(true);
     }
 
     IEnumerator RunTimer()
     {
         while (_timeLeft > 0f)
         {
-            _timeLeft -= Time.deltaTime;
-            if (detailPanel.activeSelf) UpdateTimerLabel(_timeLeft);
+            _timeLeft = Mathf.Max(0f, _timeLeft - Time.deltaTime);
+            if (detailPanel && detailPanel.activeSelf) { UpdateTimerLabel(_timeLeft); UpdateTimerBar(_timeLeft); }
+            if (badgeBackground) badgeBackground.color = _timeLeft <= urgencyThreshold ? badgeUrgentColor : badgeNormalColor;
             yield return null;
         }
-
-        _timeLeft = 0f;
-        if (detailPanel.activeSelf) UpdateTimerLabel(_timeLeft);
         onTimerExpired?.Invoke(_order);
-
+        onFinished?.Invoke(this);
         HideAll();
     }
 
-    void UpdateTimerLabel(float secondsLeft)
+    void UpdateTimerLabel(float t)
     {
         if (!detailTimerText) return;
-        secondsLeft = Mathf.Max(0, secondsLeft);
-        int s = Mathf.CeilToInt(secondsLeft);
+        int s = Mathf.CeilToInt(t);
         detailTimerText.text = $"{s / 60:00}:{s % 60:00}";
+        detailTimerText.color = t <= urgencyThreshold ? timerBarUrgentColor : Color.white;
     }
 
-    public void HideAll() => SetAllOff();
+    void UpdateTimerBar(float t)
+    {
+        if (!timerBarFill) return;
+        float r = _timeTotal > 0 ? t / _timeTotal : 0f;
+        timerBarFill.fillAmount = r;
+        timerBarFill.color = Color.Lerp(timerBarUrgentColor, timerBarFullColor, r);
+    }
+
+    void StopAll()
+    {
+        if (_timerCo != null) { StopCoroutine(_timerCo); _timerCo = null; }
+        if (_previewCo != null) { StopCoroutine(_previewCo); _previewCo = null; }
+    }
 }

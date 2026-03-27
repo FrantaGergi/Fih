@@ -1,2 +1,22 @@
 fileFormatVersion: 2
 guid: fd94b18bd196a844eac52dab312a5e00
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - previewPanel: {instanceID: 0}
+  - badgePanel: {instanceID: 0}
+  - detailPanel: {instanceID: 0}
+  - previewText: {instanceID: 0}
+  - badgeButton: {instanceID: 0}
+  - badgeNumberText: {instanceID: 0}
+  - badgeBackground: {instanceID: 0}
+  - detailFishText: {instanceID: 0}
+  - detailTimerText: {instanceID: 0}
+  - closeDetailButton: {instanceID: 0}
+  - timerBarFill: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
